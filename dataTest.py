@@ -31,3 +31,16 @@ level5data.render_annotation(ann2img)
 my_instance = level5data.get('instance', my_annotation['instance_token'])
 
 #FIGURE OUT HOW TO CALL THE SAME OBJECT ACROSS DIFFERENT FRAMES
+annodict = {
+  "rotation": [],
+  "size": [],
+  "translation": []
+}
+anno = level5data.get('sample_annotation', my_instance['first_annotation_token'])
+annonum = my_instance['nbr_annotations']
+for x in range(annonum):
+    annodict['rotation'].append(anno['rotation'])
+    annodict['size'].append(anno['size'])
+    annodict['translation'].append(anno['translation'])
+    if (x<(annonum-1)):
+        anno = level5data.get('sample_annotation', anno['next'])
