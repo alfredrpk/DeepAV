@@ -1,10 +1,10 @@
 import tensorflow as tf
-import numpy as np
+#import numpy as np
 import copy
 from lyft_dataset_sdk.lyftdataset import LyftDataset
 level5data = LyftDataset(data_path='D:/LEVEL5/v1.01-train', json_path='D:/LEVEL5/v1.01-train/v1.01-train', verbose=True)
 
-level5data.list_scenes()
+#level5data.list_scenes()
 # =============================================================================
 # level5data.render_sample(firstsampletoken)
 # first = level5data.get('sample', firstsampletoken)
@@ -28,8 +28,6 @@ level5data.list_scenes()
 # ann2img =  my_sample_data.get('sample_annotation', my_annotation_token2)
 # level5data.render_annotation(ann2img)
 # =============================================================================
-
-
 annodict = {
   "rotation": [],
   "size": [],
@@ -38,37 +36,41 @@ annodict = {
 trash = []
 raw = []
 instannos = []
-my_scene = level5data.scene[0]
-firstsampletoken = my_scene["first_sample_token"]
-samp = level5data.get('sample', firstsampletoken)
-nextexists=True
-while (nextexists):
-    anns=samp['anns']
-    for ann in anns:
-        annotation =  level5data.get('sample_annotation', ann)
-        if annotation['instance_token'] in trash:
-            print('duplicate found')
+#my_scene = level5data.scene[0]
+for my_scene in level5data.scene:
+    trash=[] #empty trash bc instances are not kept across scenes
+    firstsampletoken = my_scene["first_sample_token"]
+    samp = level5data.get('sample', firstsampletoken)
+    nextexists=True
+    while (nextexists):
+        anns=samp['anns']
+        for ann in anns:
+            annotation =  level5data.get('sample_annotation', ann)
+            if annotation['instance_token'] in trash:
+                tf.logging.info('duplicate found')
+            else:
+                instance = level5data.get('instance', annotation['instance_token'])
+                anno = level5data.get('sample_annotation', instance['first_annotation_token'])
+                annonum = instance['nbr_annotations']
+                instannos = []
+                for x in range(annonum):
+                    annodict['rotation']=[]
+                    annodict['size']=[]
+                    annodict['translation']=[]
+                    annodict['rotation'].append(anno['rotation'])
+                    annodict['size'].append(anno['size'])
+                    annodict['translation'].append(anno['translation'])
+                    instannos.append(copy.deepcopy(annodict))
+                    if (x<(annonum-1)):
+                        anno = level5data.get('sample_annotation', anno['next'])
+                raw.append(instannos)
+                trash.append(annotation['instance_token'])
+        if (samp['next'] == ""):
+            tf.logging.info('reached end')
+            nextexists=False
         else:
-            instance = level5data.get('instance', annotation['instance_token'])
-            anno = level5data.get('sample_annotation', instance['first_annotation_token'])
-            annonum = instance['nbr_annotations']
-            instannos = []
-            for x in range(annonum):
-                annodict['rotation']=[]
-                annodict['size']=[]
-                annodict['translation']=[]
-                annodict['rotation'].append(anno['rotation'])
-                annodict['size'].append(anno['size'])
-                annodict['translation'].append(anno['translation'])
-                instannos.append(copy.deepcopy(annodict))
-                if (x<(annonum-1)):
-                    anno = level5data.get('sample_annotation', anno['next'])
-            raw.append(instannos)
-            trash.append(annotation['instance_token'])
-    if (samp['next'] == ""):
-        print('reached end')
-        nextexists=False
-    else:
-        samp = level5data.get('sample', samp['next'])
+            samp = level5data.get('sample', samp['next'])
 
-
+import pickle
+pickle_in = open("C:/DeepSDV/raw.pickle","rb")
+raw = pickle.load(pickle_in)
