@@ -31,7 +31,8 @@ level5data = LyftDataset(data_path='D:/LEVEL5/v1.01-train', json_path='D:/LEVEL5
 annodict = {
   "rotation": [],
   "size": [],
-  "translation": []
+  "translation": [],
+  "name": []
 }
 trash = []
 raw = []
@@ -53,13 +54,16 @@ for my_scene in level5data.scene:
                 anno = level5data.get('sample_annotation', instance['first_annotation_token'])
                 annonum = instance['nbr_annotations']
                 instannos = []
+                namae = level5data.get('category', instance['category_token'])['name']
                 for x in range(annonum):
                     annodict['rotation']=[]
                     annodict['size']=[]
                     annodict['translation']=[]
+                    annodict['name']=[]
                     annodict['rotation'].append(anno['rotation'])
                     annodict['size'].append(anno['size'])
                     annodict['translation'].append(anno['translation'])
+                    annodict['name'].append(namae)
                     instannos.append(copy.deepcopy(annodict))
                     if (x<(annonum-1)):
                         anno = level5data.get('sample_annotation', anno['next'])
@@ -71,6 +75,22 @@ for my_scene in level5data.scene:
         else:
             samp = level5data.get('sample', samp['next'])
 
-import pickle
-pickle_in = open("C:/DeepSDV/raw.pickle","rb")
-raw = pickle.load(pickle_in)
+#import pickle
+#pickle_in = open("C:/DeepSDV/raw.pickle","rb")
+#raw = pickle.load(pickle_in)
+sorryallnames = []
+for scene in raw:
+    sorryallnames.append(scene[0]['name'][0])
+
+peds=[]
+for nam in sorryallnames:
+    if (nam=='pedestrian'):
+        peds.append(nam )
+    if (nam=='animal'):
+        peds.append(nam)
+        
+vrooms=[]
+for vroom in sorryallnames:
+    if (vroom=='car'):
+        vrooms.append(vroom)
+        
