@@ -26,7 +26,6 @@ for my_scene in level5data.scene:
         for ann in anns:
             annotation =  level5data.get('sample_annotation', ann)
             if annotation['instance_token'] in trash:
-                tf.logging.info('duplicate found')
             else:
                 instance = level5data.get('instance', annotation['instance_token'])
                 anno = level5data.get('sample_annotation', instance['first_annotation_token'])

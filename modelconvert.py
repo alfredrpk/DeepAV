@@ -109,3 +109,4 @@ args = parser.parse_args()
 
 tpredict = SRNN(args)
 tpredict.load_state_dict(torch.load('C:/TrafficPredict/srnn/save/srnn_model_271.tar'), strict=False)
+torch.save(tpredict, 'C:/DeepSDV/model/tpredict.pth')
