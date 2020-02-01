@@ -1,12 +1,14 @@
 import numpy as np
 #import copy
 from nuscenes.nuscenes import NuScenes
-nusc = NuScenes(version='v1.0-mini', dataroot='D:/mini', verbose=True)
+nusc = NuScenes(version='v1.0-trainval', dataroot='D:/NuScenes', verbose=True)
 import pickle
 
-f = open('C:/TrafficPredict/data/trajectories.cpkl', "rb")
-raw_data = pickle.load(f)
-f.close()
+# =============================================================================
+# f = open('C:/TrafficPredict/data/trajectories.cpkl', "rb")
+# raw_data = pickle.load(f)
+# f.close()
+# =============================================================================
 
 annodict = {
   "rotation": [],
@@ -66,12 +68,16 @@ max_position_x = -1000
 min_position_y = 1000
 max_position_y = -1000
 
+#data.pop(748)
+count=0 
 for scene in data:
     for sample in scene:
         min_position_x = min(min_position_x, min(sample[:, 1]))
         max_position_x = max(max_position_x, max(sample[:, 1]))
         min_position_y = min(min_position_y, min(sample[:, 2]))
         max_position_y = max(max_position_y, max(sample[:, 2]))
+    count=count+1
+        
 for scene in data:
     for sample in scene:
         sample[:, 1] = (
