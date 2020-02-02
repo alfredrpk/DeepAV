@@ -1,7 +1,8 @@
+"""
 import numpy as np
 #import copy
 from nuscenes.nuscenes import NuScenes
-nusc = NuScenes(version='v1.0-trainval', dataroot='D:/NuScenes', verbose=True)
+#nusc = NuScenes(version='v1.0-trainval', dataroot='D:/NuScenes', verbose=True)
 import pickle
 
 # =============================================================================
@@ -57,7 +58,8 @@ for my_scene in nusc.scene:
             scenelist.append(samprow)
             
             if (samp['next'] == ""):
-                print('completed', count, 'out of', len(nucs.scene))
+                print('completed', count, 'out of', len(nusc.scene))
+                count=count+1
                 nextexists=False
             else:
                 samp = nusc.get('sample', samp['next'])
@@ -85,17 +87,19 @@ numPeds_data = []
 val_fraction = 0.2
 dataset_index = 0
 
-#data.pop(748)
-count = 0
-for scene in data:
-    plspop=False
-    for sample in scene
-        if sample == []:
-            plspop=True
-    if plspop == True:
-        data.pop(count)
-    else:
-        count=count+1
+data.pop(749)
+# =============================================================================
+# count = 0
+# for scene in data:
+#     plspop=False
+#     for sample in scene:
+#         if sample == []:
+#             plspop=True
+#     if plspop == True:
+#         print(count)
+#     else:
+#         count=count+1
+# =============================================================================
 
 count=0 
 for scene in data:
@@ -105,7 +109,11 @@ for scene in data:
         min_position_y = min(min_position_y, min(sample[:, 2]))
         max_position_y = max(max_position_y, max(sample[:, 2]))
     count=count+1
-        
+    
+pickle.dump( data, open( "rawdata.cpkl", "wb" ) )"""
+data = pickle.load( open( "rawdata.cpkl", "rb" ) )
+
+
 for scene in data:
     for sample in scene:
         sample[:, 1] = (
@@ -124,6 +132,8 @@ for scene in data:
         all_frame_data.append([])
         valid_frame_data.append([])
 
+        skip=1
+        
         for ind, frame in enumerate(frameList):
 
             ## NOTE CHANGE
