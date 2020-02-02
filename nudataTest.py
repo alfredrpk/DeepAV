@@ -1,10 +1,10 @@
 
 import numpy as np
 #import copy
-#from nuscenes.nuscenes import NuScenes
-#nusc = NuScenes(version='v1.0-trainval', dataroot='D:/NuScenes', verbose=True)
+from nuscenes.nuscenes import NuScenes
+nusc = NuScenes(version='v1.0-trainval', dataroot='D:/NuScenes', verbose=True)
 import pickle
-"""
+
 # =============================================================================
 # f = open('C:/TrafficPredict/data/trajectories.cpkl', "rb")
 # raw_data = pickle.load(f)
@@ -23,6 +23,7 @@ instances = []
 loglist = []
 #my_scene = level5data.scene[0]
 count=1
+sampcount=0
 for my_scene in nusc.scene:
     trash=[] #empty trash bc instances are not kept across scenes
     
@@ -39,9 +40,10 @@ for my_scene in nusc.scene:
         firstsampletoken = my_scene["first_sample_token"]
         samp = nusc.get('sample', firstsampletoken)
         nextexists=True
-        scenelist = []
+        scenelist = np.array([0,0,0,0,0], dtype='float64').reshape((1,5))
+        sampcount=0
         while (nextexists):
-            samprow = np.array([0,0,0,0], dtype='float64').reshape((1,4))
+            samprow = np.array([0,0,0,0,0], dtype='float64').reshape((1,5))
             
             for ann in samp['anns']:
                 anno = nusc.get('sample_annotation', ann)
@@ -51,11 +53,11 @@ for my_scene in nusc.scene:
                     instances.append(instoken)
                 if 'vehicle' in anno['category_name']:
                     pedid = instances.index(instoken)+1
-                    annadd = np.array([pedid, anno['translation'][0], anno['translation'][1], contextnum], dtype='float64').reshape((1,4))
+                    annadd = np.array([sampcount, pedid, contextnum, anno['translation'][0], anno['translation'][1]], dtype='float64').reshape((1,5))
                     samprow = np.concatenate((samprow, annadd))
             samprow = samprow[1:]
             samprow.sort(axis=0)
-            scenelist.append(samprow)
+            scenelist = np.concatenate((scenelist, samprow))
             
             if (samp['next'] == ""):
                 print('completed', count, 'out of', len(nusc.scene))
@@ -63,11 +65,15 @@ for my_scene in nusc.scene:
                 nextexists=False
             else:
                 samp = nusc.get('sample', samp['next'])
+                sampcount=sampcount+1
+        scenelist = scenelist[1:]
         data.append(scenelist)
-"""
-#pickle.dump( data, open( "rawdata.cpkl", "wb" ) )
-data = pickle.load( open( "C:/DeepSDV/rawdata.cpkl", "rb" ) )
 
+
+
+pickle.dump( data, open( "rawdata.cpkl", "wb" ) )
+#data = pickle.load( open( "C:/DeepSDV/rawdata.cpkl", "rb" ) )
+"""
 def class_objtype(object_type):
         if object_type == 1 or object_type == 2:
             return 3
@@ -103,6 +109,7 @@ dataset_index = 0
 #     else:
 #         count=count+1
 # =============================================================================
+
 
 count=0 
 for scene in data:
@@ -186,7 +193,7 @@ raw[0]=data[0:limit]
 raw[1]=data[limit:]
 
 pickle.dump( raw, open( "data.cpkl", "wb" ) )
-
+"""
 
 # =============================================================================
 # all_frame_data = []
