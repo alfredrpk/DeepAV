@@ -63,12 +63,40 @@ for my_scene in nusc.scene:
                 samp = nusc.get('sample', samp['next'])
         data.append(scenelist)
 
+def class_objtype(object_type):
+        if object_type == 1 or object_type == 2:
+            return 3
+        elif object_type == 3:
+            return 1
+        elif object_type == 4:
+            return 2
+        else:
+            return -1
+
 min_position_x = 1000
 max_position_x = -1000
 min_position_y = 1000
 max_position_y = -1000
 
+all_frame_data = []
+valid_frame_data = []
+frameList_data = []
+numPeds_data = []
+val_fraction = 0.2
+dataset_index = 0
+
 #data.pop(748)
+count = 0
+for scene in data:
+    plspop=False
+    for sample in scene
+        if sample == []:
+            plspop=True
+    if plspop == True:
+        data.pop(count)
+    else:
+        count=count+1
+
 count=0 
 for scene in data:
     for sample in scene:
@@ -86,6 +114,57 @@ for scene in data:
         sample[:, 2] = (
             (sample[:, 2] - min_position_y) / (max_position_y - min_position_y)
         ) * 2 - 1
+
+        sample = sample[~(sample[:, 2] == 5)]
+
+        frameList = np.unique(sample[:, 0]).tolist()
+        numFrames = len(frameList)
+        frameList_data.append(frameList)
+        numPeds_data.append([])
+        all_frame_data.append([])
+        valid_frame_data.append([])
+
+        for ind, frame in enumerate(frameList):
+
+            ## NOTE CHANGE
+            if ind % skip != 0:
+                # Skip every n frames
+                continue
+
+            # Extract all pedestrians in current frame
+            pedsInFrame = sample[sample[:, 0] == frame, :]
+
+            # Extract peds list
+            pedsList = pedsInFrame[:, 1].tolist()
+
+            # Add number of peds in the current frame to the stored data
+            numPeds_data[dataset_index].append(len(pedsList))
+
+            # Initialize the row of the numpy array
+            pedsWithPos = []
+            # For each ped in the current frame
+            for ped in pedsList:
+                # Extract their x and y positions
+                current_x = pedsInFrame[pedsInFrame[:, 1] == ped, 3][0]
+                current_y = pedsInFrame[pedsInFrame[:, 1] == ped, 4][0]
+                current_type = class_objtype(
+                    int(pedsInFrame[pedsInFrame[:, 1] == ped, 2][0])
+                )
+                # print('current_type    {}'.format(current_type))
+                # Add their pedID, x, y to the row of the numpy array
+                pedsWithPos.append([ped, current_x, current_y, current_type])
+
+            if (ind > numFrames * 0.2):
+                # At inference time, no validation data
+                # Add the details of all the peds in the current frame to all_frame_data
+                all_frame_data[dataset_index].append(
+                    np.array(pedsWithPos)
+                )  # different frame (may) have diffenent number person
+            else:
+                valid_frame_data[dataset_index].append(np.array(pedsWithPos))
+        dataset_index += 1
+
+
 
 np.random.shuffle(data)
 limit = int(len(data)/2)
