@@ -1,10 +1,10 @@
-"""
+
 import numpy as np
 #import copy
-from nuscenes.nuscenes import NuScenes
+#from nuscenes.nuscenes import NuScenes
 #nusc = NuScenes(version='v1.0-trainval', dataroot='D:/NuScenes', verbose=True)
 import pickle
-
+"""
 # =============================================================================
 # f = open('C:/TrafficPredict/data/trajectories.cpkl', "rb")
 # raw_data = pickle.load(f)
@@ -64,6 +64,9 @@ for my_scene in nusc.scene:
             else:
                 samp = nusc.get('sample', samp['next'])
         data.append(scenelist)
+"""
+#pickle.dump( data, open( "rawdata.cpkl", "wb" ) )
+data = pickle.load( open( "C:/DeepSDV/rawdata.cpkl", "rb" ) )
 
 def class_objtype(object_type):
         if object_type == 1 or object_type == 2:
@@ -87,7 +90,7 @@ numPeds_data = []
 val_fraction = 0.2
 dataset_index = 0
 
-data.pop(749)
+#data.pop(749)
 # =============================================================================
 # count = 0
 # for scene in data:
@@ -109,9 +112,6 @@ for scene in data:
         min_position_y = min(min_position_y, min(sample[:, 2]))
         max_position_y = max(max_position_y, max(sample[:, 2]))
     count=count+1
-    
-pickle.dump( data, open( "rawdata.cpkl", "wb" ) )"""
-data = pickle.load( open( "rawdata.cpkl", "rb" ) )
 
 
 for scene in data:
