@@ -21,6 +21,7 @@ data = []
 instances = []
 loglist = []
 #my_scene = level5data.scene[0]
+count=1
 for my_scene in nusc.scene:
     trash=[] #empty trash bc instances are not kept across scenes
     
@@ -54,10 +55,9 @@ for my_scene in nusc.scene:
             samprow = samprow[1:]
             samprow.sort(axis=0)
             scenelist.append(samprow)
-            #print('tick')
             
             if (samp['next'] == ""):
-                print('reached end')
+                print('completed', count, 'out of', len(nucs.scene))
                 nextexists=False
             else:
                 samp = nusc.get('sample', samp['next'])
