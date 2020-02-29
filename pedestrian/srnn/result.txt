@@ -1,0 +1,4 @@
+AVG disp error:     singapore-onenorth: 0.05127055197954178       boston-seaport: 0.06215114891529083        singapore-queenstown:0.034886714071035385
+total average error:    0.04943614453077316
+Final disp error:   singapore-onenorth: 0.0750240832567215       boston-seaport: 0.09696895629167557        singapore-queenstown:0.0429721400141716
+total final error:    0.07165505737066269

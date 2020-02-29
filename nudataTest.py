@@ -1,30 +1,28 @@
-
 import numpy as np
-#import copy
+import copy
 from nuscenes.nuscenes import NuScenes
 nusc = NuScenes(version='v1.0-trainval', dataroot='D:/NuScenes', verbose=True)
+#Train dataset is used because test dataset doesn't have annotations.
 import pickle
+import random
 
-# =============================================================================
-# f = open('C:/TrafficPredict/data/trajectories.cpkl', "rb")
-# raw_data = pickle.load(f)
-# f.close()
-# =============================================================================
-
-annodict = {
-  "rotation": [],
-  "size": [],
-  "translation": [],
-  "name": []
-}
-trash = []
-data = []
-instances = []
-loglist = []
-#my_scene = level5data.scene[0]
-count=1
+raw = []
 sampcount=0
-for my_scene in nusc.scene:
+scenes = nusc.scene
+randscenes = random.sample(scenes, len(scenes))
+#randscenes = randscenes[:int(len(randscenes)/4)]
+#pickle.dump( data, open( "randscenes.cpkl", "wb" ) )
+trainscenes = pickle.load( open( "trainscenes.cpkl", "rb" ) )
+testscenes=[]
+for x in range(len(randscenes)):
+    if randscenes[x] not in trainscenes:
+        testscenes.append(randscenes[x])
+
+testscenes = testscenes[:int(len(testscenes)/10)]
+pickle.dump( testscenes, open( "testscenes.cpkl", "wb" ) )
+testscenes = pickle.load( open( "testscenes.cpkl", "rb" ) )
+
+for my_scene in testscenes:
     trash=[] #empty trash bc instances are not kept across scenes
     
     log = nusc.get('log', my_scene['log_token'])
@@ -60,7 +58,7 @@ for my_scene in nusc.scene:
             scenelist = np.concatenate((scenelist, samprow))
             
             if (samp['next'] == ""):
-                print('completed', count, 'out of', len(nusc.scene))
+                print('completed', count, 'out of', len(testscenes))
                 count=count+1
                 nextexists=False
             else:
@@ -68,21 +66,6 @@ for my_scene in nusc.scene:
                 sampcount=sampcount+1
         scenelist = scenelist[1:]
         data.append(scenelist)
-
-
-
-pickle.dump( data, open( "rawdata.cpkl", "wb" ) )
-#data = pickle.load( open( "C:/DeepSDV/rawdata.cpkl", "rb" ) )
-"""
-def class_objtype(object_type):
-        if object_type == 1 or object_type == 2:
-            return 3
-        elif object_type == 3:
-            return 1
-        elif object_type == 4:
-            return 2
-        else:
-            return -1
 
 min_position_x = 1000
 max_position_x = -1000
@@ -93,173 +76,107 @@ all_frame_data = []
 valid_frame_data = []
 frameList_data = []
 numPeds_data = []
-val_fraction = 0.2
+val_fraction = 0.3
 dataset_index = 0
 
-#data.pop(749)
-# =============================================================================
-# count = 0
-# for scene in data:
-#     plspop=False
-#     for sample in scene:
-#         if sample == []:
-#             plspop=True
-#     if plspop == True:
-#         print(count)
-#     else:
-#         count=count+1
-# =============================================================================
+#THE REST OF THIS IS FORKED CODE FROM HUANG-XX'S TRAFFICPREDICT REPO
 
+ # all_frame_data would be a list of list of numpy arrays corresponding to each dataset
+# Each numpy array will correspond to a frame and would be of size (numPeds, 3) each row
+# containing pedID, x, y
+all_frame_data = []
+# Validation frame data
+valid_frame_data = []
+# frameList_data would be a list of lists corresponding to each dataset
+# Each list would contain the frameIds of all the frames in the dataset
+frameList_data = []
+# numPeds_data would be a list of lists corresponding to each dataset
+# Ech list would contain the number of pedestrians in each frame in the dataset
+numPeds_data = []
+# Index of the current dataset
+dataset_index = 0
 
-count=0 
-for scene in data:
-    for sample in scene:
-        min_position_x = min(min_position_x, min(sample[:, 1]))
-        max_position_x = max(max_position_x, max(sample[:, 1]))
-        min_position_y = min(min_position_y, min(sample[:, 2]))
-        max_position_y = max(max_position_y, max(sample[:, 2]))
-    count=count+1
+min_position_x = 1000
+max_position_x = -1000
+min_position_y = 1000
+max_position_y = -1000
 
+for data in raw:
+    min_position_x = min(min_position_x, min(data[:, 3]))
+    max_position_x = max(max_position_x, max(data[:, 3]))
+    min_position_y = min(min_position_y, min(data[:, 4]))
+    max_position_y = max(max_position_y, max(data[:, 4]))
+    
+# For each dataset
+for data in raw:
+    data[:, 3] = (
+        (data[:, 3] - min_position_x) / (max_position_x - min_position_x)
+    ) * 2 - 1
+    data[:, 4] = (
+        (data[:, 4] - min_position_y) / (max_position_y - min_position_y)
+    ) * 2 - 1
 
-for scene in data:
-    for sample in scene:
-        sample[:, 1] = (
-            (sample[:, 1] - min_position_x) / (max_position_x - min_position_x)
-        ) * 2 - 1
-        sample[:, 2] = (
-            (sample[:, 2] - min_position_y) / (max_position_y - min_position_y)
-        ) * 2 - 1
+    data = data[~(data[:, 2] == 5)]
 
-        sample = sample[~(sample[:, 2] == 5)]
+    # Frame IDs of the frames in the current dataset
+    frameList = np.unique(data[:, 0]).tolist()
+    numFrames = len(frameList)
 
-        frameList = np.unique(sample[:, 0]).tolist()
-        numFrames = len(frameList)
-        frameList_data.append(frameList)
-        numPeds_data.append([])
-        all_frame_data.append([])
-        valid_frame_data.append([])
+    # Add the list of frameIDs to the frameList_data
+    frameList_data.append(frameList)
+    # Initialize the list of numPeds for the current dataset
+    numPeds_data.append([])
+    # Initialize the list of numpy arrays for the current dataset
+    all_frame_data.append([])
+    # Initialize the list of numpy arrays for the current dataset
+    valid_frame_data.append([])
 
-        skip=1
-        
-        for ind, frame in enumerate(frameList):
+    skip = 1
 
-            ## NOTE CHANGE
-            if ind % skip != 0:
-                # Skip every n frames
-                continue
+    for ind, frame in enumerate(frameList):
 
-            # Extract all pedestrians in current frame
-            pedsInFrame = sample[sample[:, 0] == frame, :]
+        ## NOTE CHANGE
+        if ind % skip != 0:
+            # Skip every n frames
+            continue
 
-            # Extract peds list
-            pedsList = pedsInFrame[:, 1].tolist()
+        # Extract all pedestrians in current frame
+        pedsInFrame = data[data[:, 0] == frame, :]
 
-            # Add number of peds in the current frame to the stored data
-            numPeds_data[dataset_index].append(len(pedsList))
+        # Extract peds list
+        pedsList = pedsInFrame[:, 1].tolist()
 
-            # Initialize the row of the numpy array
-            pedsWithPos = []
-            # For each ped in the current frame
-            for ped in pedsList:
-                # Extract their x and y positions
-                current_x = pedsInFrame[pedsInFrame[:, 1] == ped, 3][0]
-                current_y = pedsInFrame[pedsInFrame[:, 1] == ped, 4][0]
-                current_type = class_objtype(
-                    int(pedsInFrame[pedsInFrame[:, 1] == ped, 2][0])
-                )
-                # print('current_type    {}'.format(current_type))
-                # Add their pedID, x, y to the row of the numpy array
-                pedsWithPos.append([ped, current_x, current_y, current_type])
+        # Add number of peds in the current frame to the stored data
+        numPeds_data[dataset_index].append(len(pedsList))
 
-            if (ind > numFrames * 0.2):
-                # At inference time, no validation data
-                # Add the details of all the peds in the current frame to all_frame_data
-                all_frame_data[dataset_index].append(
-                    np.array(pedsWithPos)
-                )  # different frame (may) have diffenent number person
-            else:
-                valid_frame_data[dataset_index].append(np.array(pedsWithPos))
-        dataset_index += 1
+        # Initialize the row of the numpy array
+        pedsWithPos = []
+        # For each ped in the current frame
+        for ped in pedsList:
+            # Extract their x and y positions
+            current_x = pedsInFrame[pedsInFrame[:, 1] == ped, 3][0]
+            current_y = pedsInFrame[pedsInFrame[:, 1] == ped, 4][0]
+            current_type = pedsInFrame[pedsInFrame[:, 1] == ped, 2][0]
+            # print('current_type    {}'.format(current_type))
+            # Add their pedID, x, y to the row of the numpy array
+            pedsWithPos.append([ped, current_x, current_y, current_type])
 
+        if (ind > numFrames * val_fraction):
+            # At inference time, no validation data
+            # Add the details of all the peds in the current frame to all_frame_data
+            all_frame_data[dataset_index].append(
+                np.array(pedsWithPos)
+            )  # different frame (may) have diffenent number person
+        else:
+            valid_frame_data[dataset_index].append(np.array(pedsWithPos))
 
-
-np.random.shuffle(data)
-limit = int(len(data)/2)
-
-raw=[]
-raw.append([])
-raw.append([])
-raw[0]=data[0:limit]
-raw[1]=data[limit:]
-
-pickle.dump( raw, open( "data.cpkl", "wb" ) )
-"""
-
-# =============================================================================
-# all_frame_data = []
-# # Validation frame data
-# valid_frame_data = []
-# # frameList_data would be a list of lists corresponding to each dataset
-# # Each list would contain the frameIds of all the frames in the dataset
-# frameList_data = []
-# # numPeds_data would be a list of lists corresponding to each dataset
-# # Ech list would contain the number of pedestrians in each frame in the dataset
-# numPeds_data = []
-# # Index of the current dataset
-# dataset_index = 0
-# 
-# # Frame IDs of the frames in the current dataset
-# frameList = np.unique(data[:, 0]).tolist()
-# numFrames = len(frameList)
-# # Add the list of frameIDs to the frameList_data
-# frameList_data.append(frameList)
-# # Initialize the list of numPeds for the current dataset
-# numPeds_data.append([])
-# # Initialize the list of numpy arrays for the current dataset
-# all_frame_data.append([])
-# # Initialize the list of numpy arrays for the current dataset
-# valid_frame_data.append([])
-# 
-# skip = 1
-# 
-# for ind, frame in enumerate(frameList):
-# 
-#     ## NOTE CHANGE
-#     if ind % skip != 0:
-#         # Skip every n frames
-#         continue
-# 
-#     # Extract all pedestrians in current frame
-#     pedsInFrame = data[data[:, 0] == frame, :]
-# 
-#     # Extract peds list
-#     pedsList = pedsInFrame[:, 1].tolist()
-# 
-#     # Add number of peds in the current frame to the stored data
-#     numPeds_data[dataset_index].append(len(pedsList))
-# 
-#     # Initialize the row of the numpy array
-#     pedsWithPos = []
-#     # For each ped in the current frame
-#     for ped in pedsList:
-#         # Extract their x and y positions
-#         current_x = pedsInFrame[pedsInFrame[:, 1] == ped, 3][0]
-#         current_y = pedsInFrame[pedsInFrame[:, 1] == ped, 4][0]
-#         current_type = self.class_objtype(
-#             int(pedsInFrame[pedsInFrame[:, 1] == ped, 2][0])
-#         )
-#         # print('current_type    {}'.format(current_type))
-#         # Add their pedID, x, y to the row of the numpy array
-#         pedsWithPos.append([ped, current_x, current_y, current_type])
-# 
-#     if (ind > numFrames * self.val_fraction) or (self.infer):
-#         # At inference time, no validation data
-#         # Add the details of all the peds in the current frame to all_frame_data
-#         all_frame_data[dataset_index].append(
-#             np.array(pedsWithPos)
-#         )  # different frame (may) have diffenent number person
-#     else:
-#         valid_frame_data[dataset_index].append(np.array(pedsWithPos))
-# 
-#     dataset_index += 1
-# =============================================================================
+    dataset_index += 1
+# Save the tuple (all_frame_data, frameList_data, numPeds_data) in the pickle file
+f = open('pedestrian/data/trajectories_TP_pedestrians_test.cpkl', "wb")
+#f = open('vehicle/data/trajectories_TP_vehicles_test.cpkl', "wb")
+pickle.dump(
+    (all_frame_data, frameList_data, numPeds_data, valid_frame_data),
+    f,
+    protocol=2,
+)
+f.close()
