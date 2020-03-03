@@ -6,7 +6,10 @@ import pickle
 import random
 
 raw = []
+count=1
 sampcount=0
+instances = []
+loglist = []
 scenes = nusc.scene
 randscenes = random.sample(scenes, len(scenes))
 trainscenes = randscenes[:int(len(randscenes)/4)]
@@ -55,7 +58,7 @@ for my_scene in trainscenes:
                 samp = nusc.get('sample', samp['next'])
                 sampcount=sampcount+1
         scenelist = scenelist[1:]
-        data.append(scenelist)
+        raw.append(scenelist)
 
 min_position_x = 1000
 max_position_x = -1000
@@ -162,8 +165,8 @@ for data in raw:
 
     dataset_index += 1
 # Save the tuple (all_frame_data, frameList_data, numPeds_data) in the pickle file
-f = open('trajectories_TP_pedestrians.cpkl', "wb")
-#f = open('trajectories_TP_vehicles.cpkl', "wb")
+f = open('pedestrian/data/trajectories_TP_pedestrians.cpkl', "wb")
+#f = open('vehicle/data/trajectories_TP_vehicles.cpkl', "wb")
 pickle.dump(
     (all_frame_data, frameList_data, numPeds_data, valid_frame_data),
     f,

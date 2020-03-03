@@ -7,7 +7,10 @@ import pickle
 import random
 
 raw = []
+count=1
 sampcount=0
+instances = []
+loglist = []
 scenes = nusc.scene
 randscenes = random.sample(scenes, len(scenes))
 #randscenes = randscenes[:int(len(randscenes)/4)]
